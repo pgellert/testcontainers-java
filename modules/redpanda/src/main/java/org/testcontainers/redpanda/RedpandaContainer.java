@@ -65,6 +65,8 @@ public class RedpandaContainer extends GenericContainer<RedpandaContainer> {
 
     private final List<String> superusers = new ArrayList<>();
 
+    private final boolean disableProtectedMode;
+
     @Deprecated
     private final Set<Supplier<Listener>> listenersValueSupplier = new HashSet<>();
 
@@ -85,6 +87,9 @@ public class RedpandaContainer extends GenericContainer<RedpandaContainer> {
         if (isPublicCompatibleImage && isLessThanBaseVersion) {
             throw new IllegalArgumentException("Redpanda version must be >= v22.2.1");
         }
+        // Redpanda 26.3+ enables protected_mode, which rejects unauthenticated non-loopback clients, i.e. every
+        // client on the mapped ports. It adds no protection here, as those ports are published on purpose.
+        this.disableProtectedMode = new ComparableVersion(imageName.getVersionPart()).isGreaterThanOrEqualTo("v26.3");
 
         withExposedPorts(REDPANDA_PORT, REDPANDA_ADMIN_PORT, SCHEMA_REGISTRY_PORT, REST_PROXY_PORT);
         withCreateContainerCmdModifier(cmd -> {
@@ -284,6 +289,7 @@ public class RedpandaContainer extends GenericContainer<RedpandaContainer> {
 
         Map<String, Object> root = new HashMap<>();
         root.put("kafkaApi", kafkaApi);
+        root.put("disableProtectedMode", this.disableProtectedMode);
 
         String file = resolveTemplate(cfg, "bootstrap.yaml.ftl", root);
 

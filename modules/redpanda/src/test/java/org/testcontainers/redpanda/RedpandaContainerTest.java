@@ -406,6 +406,18 @@ class RedpandaContainerTest extends AbstractRedpanda {
         }
     }
 
+    @Test
+    void testProtectedModeDisabled() {
+        try (RedpandaContainer redpanda = new RedpandaContainer("docker.redpanda.com/redpandadata/redpanda:v26.3.1")) {
+            redpanda.start();
+
+            String clusterConfigUrl = String.format("%s/v1/cluster_config", redpanda.getAdminAddress());
+            Response clusterConfig = RestAssured.given().when().get(clusterConfigUrl).thenReturn();
+            assertThat(clusterConfig.getStatusCode()).isEqualTo(200);
+            assertThat(clusterConfig.jsonPath().getBoolean("protected_mode")).isFalse();
+        }
+    }
+
     private AdminClient getAdminClient(RedpandaContainer redpanda) {
         String bootstrapServer = String.format("%s:%s", redpanda.getHost(), redpanda.getMappedPort(9092));
         // createAdminClient {

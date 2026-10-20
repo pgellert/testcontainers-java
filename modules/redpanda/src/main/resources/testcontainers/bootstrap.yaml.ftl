@@ -15,4 +15,8 @@ superusers:
 kafka_enable_authorization: true
 </#if>
 
+<#if disableProtectedMode >
+protected_mode: false
+</#if>
+
 auto_create_topics_enabled: true
